@@ -1,5 +1,5 @@
 import sqlite3
-
+from datetime import datetime
 # This class is a simple handler for all of our SQL database actions
 # Practicing a good separation of concerns, we should only ever call 
 # These functions from our models
@@ -13,21 +13,20 @@ class SQLDatabase():
     '''
 
     # Get the database running
-    def __init__(self, database_arg="users.db"):
-        self.conn = sqlite3.connect(database_arg)
+    def __init__(self):
+        self.conn = sqlite3.connect("Users.db")
         self.cur = self.conn.cursor()
 
     # SQLite 3 does not natively support multiple commands in a single statement
     # Using this handler restores this functionality
     # This only returns the output of the last command
-    # Don't end commands with ;
     def execute(self, sql_string):
         out = None
         for string in sql_string.split(";"):
             try:
-                self.cur.execute(string)
-                out = self.cur.fetchall()
+                out = self.cur.execute(string)
             except:
+                print("?????")
                 pass
         return out
 
@@ -42,122 +41,125 @@ class SQLDatabase():
     def database_setup(self, admin_password='admin'):
 
         # Clear the database if needed
-        self.execute("DROP TABLE IF EXISTS Comments")
         self.execute("DROP TABLE IF EXISTS Users")
         self.commit()
 
         # Create the users table
-        self.execute("""CREATE TABLE IF NOT EXISTS Users(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+        self.execute("""CREATE TABLE Users(
+            Id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT,
             password TEXT,
-            email TEXT,
-            admin INTEGER DEFAULT 0, 
-            banned INTEGER DEFAULT 0,
-            muted INTEGER DEFAULT 0,
-            staff INTEGER DEFAULT 0,
-            student INTEGER DEFAULT 0
-        )""")
-
-        self.execute("""CREATE TABLE IF NOT EXISTS Comments(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            text TEXT,
-            page TEXT,
-            FOREIGN KEY(user_id) REFERENCES Users(id)
+            admin INTEGER DEFAULT 0
         )""")
 
         self.commit()
 
-        # Add some default users to show functionality
-        self.add_user('admin', admin_password, 'admin@admin.edu.au', admin=1)
-        self.add_user('joe', 'treelearn', 'joe@uni.edu.au', student=1)
-        self.add_user('bad_boy', 'treelearn', 'bad_boy@uni.edu.au', banned=1, student=1)
-        self.add_user('loud_mouth', 'treelearn', 'loud_mouth@uni.edu.au', muted=1, student=1)
-        self.add_user('Dr Prof', 'treelearn', 'prof@uni.edu.au', staff=1)
-        self.commit()
-
-        # Add example comments
-        self.add_comment('loud_mouth', 'hello', 'python')
-        self.add_comment('loud_mouth', 'hello', 'python')
-        self.add_comment('loud_mouth', 'hello', 'python')
-        self.add_comment('loud_mouth', 'hello', 'python')
-        self.add_comment('loud_mouth', 'hello', 'python')
-        self.add_comment('loud_mouth', 'hello', 'python')
-        self.add_comment('admin', 'hi', 'python')
-        self.add_comment('Dr Prof', 'hi there', 'python')
-        self.commit()
-
-
+        # Add our admin user
+        self.add_user('admin', 'admin', admin=1)
+        self.add_user('qiuyu','12345')
 
     #-----------------------------------------------------------------------------
     # User handling
     #-----------------------------------------------------------------------------
 
     # Add a user to the database
-    def add_user(self, username, password, email,  admin=0, banned=0, muted=0, staff=0, student=1):
-        sql_cmd = f"""
-                INSERT INTO Users(username, password, email, admin, banned, muted, staff, student)
-                VALUES('{username}', '{password}','{email}', {admin}, {banned}, {muted}, {staff}, {student});
+    def add_user(self, username, password, admin=0):
+
+        self.cur.execute("select * from users where username='{}' ".format(username))
+        if self.cur.fetchone():
+            print("not successful")
+            return False
+
+        sql_cmd = """
+                INSERT INTO Users(username,password,admin)
+                VALUES( '{username}', '{password}', {admin})
             """
 
+        sql_cmd = sql_cmd.format(username=username, password=password, admin=admin)
 
         self.execute(sql_cmd)
         self.commit()
-        
         return True
-
-    # Add comment to the database
-    def add_comment(self, username, text, page):
-        find_id = f"""SELECT id FROM Users WHERE username = '{username}' LIMIT 1"""
-        user_id = self.execute(find_id)[0][0]
-        sql_cmd = f"""
-                INSERT INTO Comments(user_id, text, page)
-                VALUES({user_id}, '{text}', '{page}');
-            """
-        self.execute(sql_cmd)
-        self.commit()
 
     #-----------------------------------------------------------------------------
 
     # Check login credentials
     def check_credentials(self, username, password):
-        login_valid = f"""
+        sql_query = """
                 SELECT 1 
                 FROM Users
                 WHERE username = '{username}' AND password = '{password}'
             """
-        user_exists = f"""
-                SELECT 1 
-                FROM Users
+
+        sql_query = sql_query.format(username=username, password=password)
+        self.execute(sql_query)
+
+        # If our query returns
+        if self.cur.fetchone():
+            return True
+        else:
+            return False
+
+    def change_password(self,username,password):
+
+        self.cur.execute("select * from users where username='{}' ".format(username) )
+
+        if self.cur.fetchone()[2] == password:
+            print("same password")
+            return
+
+        sql_query = """
+                UPDATE Users
+                SET password={password}
                 WHERE username = '{username}'
             """
-        admin_check = f"""
-                SELECT 1
-                FROM Users
-                WHERE username = '{username}' AND admin = 1
-            """
-        is_banned = f"""
-                SELECT 1
-                FROM Users
-                WHERE username = '{username}' AND banned = 1
-            """
-        admin = self.execute(admin_check)
-        if admin:
-            admin = 1
-        else:
-            admin = 0
-        
-        res = self.execute(user_exists)
-        if not res:
-            return "Username not found", False, admin
+        sql_query = sql_query.format(username=username, password=password)
+        self.execute(sql_query)
+        self.commit()
 
-        res = self.execute(is_banned)
-        if res:
-            return "Account is banned", False, admin
-        
-        res = self.execute(login_valid)
-        if res:
-            return "", True, admin
-        else:
-            return "Incorrect password",  False, admin
+    def message_data_setup(self):
+        self.execute("DROP TABLE IF EXISTS Message")
+        self.commit()
+        self.execute("""CREATE TABLE Message(
+            send_on TEXT, 
+            username TEXT,
+            content TEXT,
+            send_to TEXT
+        )""")
+        self.commit()
+    
+    def send_to_public(self,username,content):
+        cur_time = datetime.now().strftime("%D %H:%M:%S")
+        self.execute("""
+            INSERT INTO Message(send_on,username,content,send_to)
+            VALUES('{}','{}','{}','public')
+        """.format(cur_time,username,content))
+        self.commit()
+
+    def send_to_user(self,username,content,send_to):
+        cur_time = datetime.now().strftime("%D %H:%M:%S")
+        self.execute("""
+            INSERT INTO Message(send_on,username,content,send_to)
+            VALUES('{}','{}','{}','{}')
+        """.format(cur_time,username,content,send_to))
+        self.commit()
+    
+    def find_forum_message(self):
+        self.execute("SELECT * FROM Message WHERE send_to = 'public' order by send_on")
+        return(self.cur.fetchall())
+
+    def find_chat(self,username):
+        self.execute("""SELECT * FROM Message WHERE (username='{}') 
+        or (send_to = '{}')  order by send_on""".format(username,username))
+        return(self.cur.fetchall())
+
+
+sql_db = SQLDatabase()
+sql_db.message_data_setup()
+sql_db.send_to_public('YU','HI')
+sql_db.send_to_user('aa','bb','cc')
+sql_db.send_to_user('cc','bb','aa')
+print(sql_db.find_chat('aa'))
+
+

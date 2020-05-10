@@ -8,9 +8,10 @@ from bottle import route, get, post, request, static_file
 
 import model
 
-#-----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
 # Static file paths
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # Allow image loading
 @route('/img/<picture:path>')
@@ -26,7 +27,8 @@ def serve_pictures(picture):
     '''
     return static_file(picture, root='static/img/')
 
-#-----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
 
 # Allow CSS
 @route('/css/<css:path>')
@@ -42,23 +44,8 @@ def serve_css(css):
     '''
     return static_file(css, root='static/css/')
 
-#-----------------------------------------------------------------------------
 
-# Allow CSS
-@route('/webfonts/<webfonts:path>')
-def serve_webfonts(webfonts):
-    '''
-        serve_css
-
-        Serves css from static/webfonts/
-
-        :: webfonts :: A path to the requested webfonts
-
-        Returns a static file object containing the requested webfonts
-    '''
-    return static_file(webfonts, root='static/webfonts/')
-
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # Allow javascript
 @route('/js/<js:path>')
@@ -74,48 +61,12 @@ def serve_js(js):
     '''
     return static_file(js, root='static/js/')
 
-# Allow svgs
-@route('/sprites/<sprites:path>')
-def serve_js(js):
-    return static_file(js, root='static/sprites/')
 
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Pages
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
-# Display the register page
-@get('/register')
-def get_register_controller():
-    '''
-        get_register
-        
-        Serves the login page
-    '''
-    return model.register_form()
-
-#-----------------------------------------------------------------------------
-
-# Register the user
-@post('/register')
-def post_register():
-    '''
-        post_register
-        
-        Handles register
-        Expects a form containing 'username' and 'password' fields
-    '''
-
-    # Handle the form processing
-    username = request.forms.get('username')
-    password = request.forms.get('password')
-    email = request.forms.get('email')
-    # Call the appropriate method
-    return model.register_user(username, password, email)
-
-#-----------------------------------------------------------------------------
-
-# Redirect to main page
-@get('/')
+# Redirect to logi
 @get('/home')
 def get_index():
     '''
@@ -126,9 +77,10 @@ def get_index():
     return model.index()
 
 
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 # Display the login page
+
 @get('/login')
 def get_login_controller():
     '''
@@ -138,7 +90,8 @@ def get_login_controller():
     '''
     return model.login_form()
 
-#-----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
 
 # Attempt the login
 @post('/login')
@@ -153,12 +106,12 @@ def post_login():
     # Handle the form processing
     username = request.forms.get('username')
     password = request.forms.get('password')
-    
+
     # Call the appropriate method
     return model.login_check(username, password)
 
 
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 @get('/about')
 def get_about():
@@ -168,30 +121,94 @@ def get_about():
         Serves the about page
     '''
     return model.about()
-   
 
-#-----------------------------------------------------------------------------
-
-@get('/logout')
-def get_logout():
+@post('/register')
+def post_register():
     '''
-        Logs the user out
+        post_register
+        
+        Handles register
+        Expects a form containing 'username' and 'password' fields
     '''
-    return model.logout()
 
-@get('/python')
-def python_res():
-    return model.get_resource('python');
+    # Handle the form processing
+    username = request.forms.get('username')
+    password = request.forms.get('password')
+    # Call the appropriate method
+    return model.register_user(username, password)
 
-@post('/python')
-def python_comment():
-    comment = request.forms.get('comment')
-    return model.resource_comment('python', comment)
 
-@get('/manage_users')
-def manage_users():
-    return model.manage_users()
+# -----------------------------------------------------------------------------
+@get('/')
+@get('/register')
+def get_register():
+    return model.register()
 
-@get('/profile/<username>')
-def get_profile(username):
-    return model.profile(username)
+
+@get('/course_guide')
+def get_course_guide():
+    return model.course_guide()
+
+
+@get('/which_major_is_right_for_you')
+def get_major():
+    return model.major()
+
+
+@get('/Summer_and_Winter_School')
+def get_s_and_w():
+    return model.summer_winter()
+
+
+@get('/Help_Available')
+def get_help():
+    return model.help_available()
+
+
+@get('/Exchange_Opportunities')
+def get_exchange():
+    return model.exchange()
+
+
+@get('/Academic_Integrity')
+def get_academic():
+    return model.academic()
+
+
+@get('/Study_Tips')
+def get_tips():
+    return model.tips()
+
+
+@get('/Study_Resources')
+def get_resources():
+    return model.resources()
+
+
+@get('/Tips_for_Internships_and_Jobs')
+def get_internships():
+    return model.internships()
+
+
+@get('/Messages')
+def get_messages():
+    return model.messages()
+
+
+@post('/Messages')
+def post_messages():
+    recepient = request.forms.get('recepient')
+    content = request.forms.get('content')
+
+    return model.post_meassages(recepient, content)
+
+
+@get('/Public_Forum')
+def get_forums():
+    return model.forums()
+
+
+@post('/Public_Forum')
+def post_forum():
+    content = request.forms.get('content')
+    return model.post_forum(content)

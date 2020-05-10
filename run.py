@@ -51,18 +51,25 @@ def run_server():
 # Comment out the current manage_db function, and 
 # uncomment the following one to load an SQLite3 database
 
+# def manage_db():
+#     '''
+#         Blank function for database support, use as needed
+#     '''
+#     pass
+
+# """
 import sql
     
-def setup_db():
+def manage_db():
     '''
-        setup_db
+        manage_db
         Starts up and re-initialises an SQL databse for the server
     '''
-    database_args = "users.db"
-    sql_db = sql.SQLDatabase(database_arg=database_args)
+
+    sql_db = sql.SQLDatabase()
     sql_db.database_setup()
     return
-
+# """
 
 #-----------------------------------------------------------------------------
 
@@ -70,7 +77,7 @@ def setup_db():
 # Add your own here as you see fit
 
 command_list = {
-    'setup_db' : setup_db,
+    'manage_db' : manage_db,
     'server'       : run_server
 }
 
